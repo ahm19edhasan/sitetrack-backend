@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: sitetrack
+      POSTGRES_USER: sitetrack
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sitetrack_local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sitetrack", "-d", "sitetrack"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "3000"
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: sitetrack
+      PGUSER: sitetrack
+      PGPASSWORD: ${POSTGRES_PASSWORD:-sitetrack_local}
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data:
